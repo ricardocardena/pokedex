@@ -1,0 +1,34 @@
+name: Labels
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened, labeled, unlabeled]
+
+jobs:
+  Semver:
+    name: Require Label Before Merging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Missing required label
+        if: |
+          ! (
+              contains(github.event.pull_request.labels.*.name, 'major') ||
+              contains(github.event.pull_request.labels.*.name, 'minor') ||
+              contains(github.event.pull_request.labels.*.name, 'patch')
+          )
+        run: |
+          echo "Pull request requires a label of: major|minor|patch"
+          echo "This workflow fails so that the pull request cannot be merged"
+          exit 1
+
+      - name: Has required label
+        if: |
+          (
+              contains(github.event.pull_request.labels.*.name, 'major') ||
+              contains(github.event.pull_request.labels.*.name, 'minor') ||
+              contains(github.event.pull_request.labels.*.name, 'patch')
+          )
+        run: |
+          echo "Pull request contains at least one of: major|minor|patch"
+          echo "This workflow passes so that the pull request can be merged"
+          exit 0
