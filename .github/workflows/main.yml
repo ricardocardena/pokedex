@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensure all tags are fetched
+          fetch-depth: 0 # Ensure all tags are fetched
 
       - name: Get Latest Tag
         id: get_latest_tag
@@ -46,11 +46,11 @@ jobs:
             }
             const labels = pr.data[0].labels.map(label => label.name);
             console.log("Labels:", labels);
-            
+
             // Filter for major, minor, or patch, returning the first match
             const validLabels = ['major', 'minor', 'patch'];
             const matchedLabel = labels.find(label => validLabels.includes(label)) || 'none';
-            
+
             console.log("Matched Label:", matchedLabel);
             return matchedLabel;
 
@@ -73,7 +73,7 @@ jobs:
           IFS='.' read -r MAJOR MINOR PATCH <<< "$OLD_VERSION"  # Split the version string into major, minor, and patch
           echo "Raw PR_LABEL: $PR_LABEL"
           echo "MAJOR: $MAJOR, MINOR: $MINOR, PATCH: $PATCH"
-          
+
           # Clean PR_LABEL (remove extra quotes and trim spaces)
           CLEAN_LABEL=$(echo "${PR_LABEL}" | sed 's/"//g' | xargs)
           echo "Processed PR_LABEL: '$CLEAN_LABEL'"
@@ -116,6 +116,20 @@ jobs:
       - name: Fetch latest changes before tagging
         run: |
           git fetch --tags
+
+      - name: Update package.json version
+        run: |
+          VERSION=${NEW_TAG#v} # Remove leading 'v'
+          echo "Updating package.json version to $VERSION"
+          npm version $VERSION --no-git-tag-version
+
+      - name: Commit package.json version bump
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add package.json package-lock.json || true
+          git commit -m "chore: bump version to ${NEW_TAG}" || echo "No changes to commit"
+          git push origin main
 
       - name: Create Git Tag
         run: |
